@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"os"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -10,7 +11,11 @@ import (
 	graw "github.com/turnage/graw/reddit"
 )
 
+var authFunc lambdaapi.CheckAuthFunc
+
 func main() {
+	authFunc = lambdaapi.RequireRequestWithToken(os.Getenv("YOUDONT_API_AUTH_TOKEN"))
+
 	lambda.Start(query)
 }
 
@@ -24,6 +29,10 @@ func query(
 	ctx context.Context,
 	req *events.APIGatewayProxyRequest,
 ) (*events.APIGatewayProxyResponse, error) {
+	if !authFunc(req) {
+		return lambdaapi.AuthRequired()
+	}
+
 	q := &reddit.UserPostQuery{
 		Limit: 10,
 	}

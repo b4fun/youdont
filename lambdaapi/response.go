@@ -6,6 +6,12 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 )
 
+func AuthRequired() (*events.APIGatewayProxyResponse, error) {
+	return &events.APIGatewayProxyResponse{
+		StatusCode: 401,
+	}, nil
+}
+
 func BadRequest() (*events.APIGatewayProxyResponse, error) {
 	return &events.APIGatewayProxyResponse{
 		StatusCode: 400,
