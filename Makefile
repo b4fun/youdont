@@ -7,6 +7,7 @@ help:
 .PHONY: build-functions
 build-functions:
 	@./script/build-function.sh get-reddit-user-post
+	@./script/build-function.sh send-to-telegram
 
 .PHONY: deploy-function
 deploy-function:

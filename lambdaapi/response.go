@@ -26,6 +26,12 @@ func ErrorResponse(err error) (*events.APIGatewayProxyResponse, error) {
 	return resp, nil
 }
 
+func OKResponse() (*events.APIGatewayProxyResponse, error) {
+	return JSONResponse(map[string]bool{
+		"ok": true,
+	})
+}
+
 func JSONResponse(thing interface{}) (*events.APIGatewayProxyResponse, error) {
 	b, err := json.Marshal(thing)
 	if err != nil {
