@@ -14,7 +14,10 @@ func RequireRequestWithToken(token string) CheckAuthFunc {
 			authToken string
 			exists    bool
 		)
-		authToken, exists = req.Headers[authHeaderKey]
+
+		header := GetHeaderFromRequest(req)
+		authToken = header.Get(authHeaderKey)
+		exists = authToken != ""
 		if !exists {
 			authToken, exists = req.QueryStringParameters[authHeaderKey]
 		}
