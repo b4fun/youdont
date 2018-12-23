@@ -1,6 +1,8 @@
 #!/bin/bash
 
 set -e
+set -o errexit
+set -o pipefail
 
 CURRENT_DIR="$(cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 PROJECT_ROOT="$(dirname "$CURRENT_DIR")"
@@ -12,7 +14,7 @@ DIST_ROOT="$PROJECT_ROOT/dist"
 #   build {FUNCTION_NAME}
 function build() {
     local -r func_name="$1"
-    local -r binary_name="$func_name-linux-amd64"
+    local -r binary_name="$func_name"
     local -r zip_name="$func_name.zip"
 
     echo "buidling $func_name..."
@@ -27,7 +29,7 @@ function build() {
     echo "built zip archive: $zip_name"
 }
 
-func_name=$1
+func_name=${1:-''}
 if [[ -z "$func_name" ]]
 then
     echo 'Usage: build-function.sh function-name'
