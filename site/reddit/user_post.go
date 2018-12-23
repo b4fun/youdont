@@ -1,7 +1,5 @@
 package reddit
 
-// get-user-post?q:subreddit=investing,wallstreet&username=foo&q:title_contain=you
-
 import (
 	"fmt"
 
@@ -10,13 +8,13 @@ import (
 
 // UserPostQuery define how to query a user's posts.
 type UserPostQuery struct {
-	Username string
-	Limit    int
+	Username string `json:"username"`
+	Limit    int    `json:"limit"`
 
-	QueryParams QueryParams
+	QueryParams QueryParams `json:"query_params"`
 
 	// Must defines a `AND` group.
-	Must []PostQueryClause
+	Must []PostQueryClause `json:"-"`
 }
 
 func (q *UserPostQuery) ListingPath() string {

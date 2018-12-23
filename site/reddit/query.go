@@ -2,18 +2,17 @@ package reddit
 
 import (
 	"fmt"
-	"net/url"
 	"strings"
 
 	graw "github.com/turnage/graw/reddit"
 )
 
 type QueryParam struct {
-	v interface{}
+	V interface{} `json:"value"`
 }
 
 func (q QueryParam) String() string {
-	switch v := q.v.(type) {
+	switch v := q.V.(type) {
 	case string:
 		return v
 	case int:
@@ -23,13 +22,18 @@ func (q QueryParam) String() string {
 	}
 }
 
-type QueryParams interface {
-	GetParams(name string) []QueryParam
+func (q QueryParam) StringSliceSplitBy(sep string) []string {
+	return strings.Split(q.String(), sep)
 }
 
-type queryParams map[string][]QueryParam
+type QueryParams interface {
+	GetParams(name string) []*QueryParam
+	GetParam(name string) *QueryParam
+}
 
-func (q queryParams) GetParams(name string) []QueryParam {
+type queryParams map[string][]*QueryParam
+
+func (q queryParams) GetParams(name string) []*QueryParam {
 	rv, exists := q[name]
 	if !exists {
 		return nil
@@ -37,7 +41,19 @@ func (q queryParams) GetParams(name string) []QueryParam {
 	return rv
 }
 
-func (q queryParams) add(name string, qp QueryParam) {
+func (q queryParams) GetParam(name string) *QueryParam {
+	rv, exists := q[name]
+	if !exists {
+		return nil
+	}
+	if len(rv) < 1 {
+		return nil
+	}
+
+	return rv[0]
+}
+
+func (q queryParams) add(name string, qp *QueryParam) {
 	q[name] = append(q[name], qp)
 }
 
@@ -84,6 +100,10 @@ func (r *QueryRegistry) register(name string, q PostQueryClause) {
 	r.queryerByNames[name] = q
 }
 
+func (r *QueryRegistry) registerFunc(name string, q PostQueryClauseFunc) {
+	r.register(name, q)
+}
+
 func (r *QueryRegistry) Get(name string) (PostQueryClause, bool) {
 	q, exists := r.queryerByNames[name]
 	return q, exists
@@ -95,12 +115,12 @@ func GetQuery(name string) (PostQueryClause, bool) {
 
 const queryUrlValueKeyPrefix = "q:"
 
-func ParseQueryFromURLValues(vs url.Values) (QueryParams, []PostQueryClause) {
+func ParseQueryFromURLValues(vs map[string][]string) (QueryParams, []PostQueryClause) {
 	qp := &queryParams{}
 	var qcs []PostQueryClause
 	qcLoaded := map[string]struct{}{}
 	for k, vv := range vs {
-		if !strings.HasPrefix(queryUrlValueKeyPrefix, k) || k == queryUrlValueKeyPrefix {
+		if !strings.HasPrefix(k, queryUrlValueKeyPrefix) || k == queryUrlValueKeyPrefix {
 			continue
 		}
 		name := k[len(queryUrlValueKeyPrefix):]
@@ -114,13 +134,32 @@ func ParseQueryFromURLValues(vs url.Values) (QueryParams, []PostQueryClause) {
 			qcLoaded[name] = struct{}{}
 		}
 
-		for v := range vv {
-			qp.add(name, QueryParam{v: v})
+		for _, v := range vv {
+			qp.add(name, &QueryParam{V: v})
 		}
 	}
-	return qp, nil
+	return qp, qcs
 }
 
 func init() {
+	defaultRegister.registerFunc("from_subreddit", func(qp QueryParams, post *graw.Post) bool {
+		for _, allowed := range qp.GetParam("from_subreddit").StringSliceSplitBy(",") {
+			if allowed == post.Subreddit {
+				return true
+			}
+		}
+
+		return false
+	})
+	defaultRegister.registerFunc("title_include", func(qp QueryParams, post *graw.Post) bool {
+		for _, keyword := range qp.GetParam("title_include").StringSliceSplitBy(",") {
+			if strings.Contains(post.Title, keyword) {
+				return true
+			}
+		}
+
+		return false
+	})
+
 	defaultRegister.freeze()
 }

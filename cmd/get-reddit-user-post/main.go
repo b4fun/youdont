@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"net/url"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -16,7 +15,9 @@ func main() {
 }
 
 type QueryResponse struct {
-	Posts []*graw.Post `json:"posts"`
+	Posts []*graw.Post          `json:"posts"`
+	Q     *reddit.UserPostQuery `json:"__q,omitempty"`
+	QRaw  map[string][]string   `json:"__q_raw,omitempty"`
 }
 
 func query(
@@ -31,14 +32,20 @@ func query(
 	} else {
 		return lambdaapi.BadRequest()
 	}
-	q.QueryParams, q.Must = reddit.ParseQueryFromURLValues(url.Values(req.MultiValueQueryStringParameters))
+	q.QueryParams, q.Must = reddit.ParseQueryFromURLValues(req.MultiValueQueryStringParameters)
 
 	posts, err := reddit.QueryUserPost(q)
 	if err != nil {
 		return lambdaapi.ErrorResponse(err)
 	}
 
-	return lambdaapi.JSONResponse(QueryResponse{
+	resp := QueryResponse{
 		Posts: posts,
-	})
+	}
+	if _, exists := req.QueryStringParameters["debug"]; exists {
+		resp.Q = q
+		resp.QRaw = req.MultiValueQueryStringParameters
+	}
+
+	return lambdaapi.JSONResponse(resp)
 }
