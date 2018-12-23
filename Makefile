@@ -1,8 +1,8 @@
 .PHONY: help
 help:
 	@echo 'make [command]'
-	@echo '	build'
+	@echo '	build-functions'
 
-.PHONY: build
-build:
-	@go build -o youdont ./cmd/*.go
+.PHONY: build-functions
+build-functions:
+	@./script/build-function.sh get-reddit-user-post
