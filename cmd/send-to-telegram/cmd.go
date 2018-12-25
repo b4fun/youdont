@@ -7,6 +7,7 @@ import (
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/b4fun/youdont/lambdaapi"
 	"github.com/b4fun/youdont/site/telegram"
+	"github.com/b4fun/youdont/awsutil"
 )
 
 var (
@@ -20,6 +21,8 @@ func main() {
 		os.Getenv("YOUDONT_TELEGRAM_BOT_TOKEN"),
 	)
 	channelID = os.Getenv("YOUDONT_TELEGRAM_CHANNEL_ID")
+
+	awsutil.MustCreateSession()
 
 	lambda.Start(run)
 }
